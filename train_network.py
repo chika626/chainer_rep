@@ -59,3 +59,5 @@ class DeepCNN(chainer.ChainList):
         for f in self:
             x = f(x)
         return x
+
+#ここからResNet
