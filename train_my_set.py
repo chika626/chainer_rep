@@ -63,6 +63,12 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=N
 def main():
     chainer.cuda.set_max_workspace_size(512 * 1024 * 1024)
     chainer.config.autotune = True
+    import configparser
+    ini = configparser.ConfigParser()
+    ini.read('./config.ini', 'UTF-8')
+    max_epoch = ini['max_epoch']
+    base_lr
+
     model = train(ResNet(10), max_epoch=100, base_lr=0.1, lr_decay=(30, 'epoch'))
 
 
