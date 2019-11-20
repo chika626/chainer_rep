@@ -9,4 +9,13 @@ train = LabeledImageDataset('data/train/train_labels.txt', 'data/train/images')
 
 
 
-def __main__():
+def main():
+
+
+
+
+
+
+#?????
+if __name__ == '__main__':
+    main()
