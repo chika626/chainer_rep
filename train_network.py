@@ -1,8 +1,9 @@
+import chainer
 from chainer.datasets import mnist
 import chainer.links as L
 import chainer.functions as F
 from chainer import iterators
-from chainercv.transforms import resize
+#from chainercv.transforms import resize
 from chainer.datasets import TransformDataset
 from chainer import optimizers
 

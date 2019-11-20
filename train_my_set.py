@@ -1,27 +1,39 @@
+import chainer
+from chainer import training
+from chainer.datasets import cifar
 from chainer.datasets import mnist
 import chainer.links as L
 import chainer.functions as F
 from chainer import iterators
-from chainercv.transforms import resize
+#from chainercv.transforms import resize
 from chainer.datasets import TransformDataset
 from chainer import optimizers
 from chainer.datasets import LabeledImageDataset
+from chainer.training import extensions
 import train_network as ResNet
+import configparser
 
 def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=None, valid_dataset=None, test_dataset=None, postfix='', base_lr=0.01, lr_decay=None):
 
     # 1. Dataset
 
-    train = LabeledImageDataset('data/train/train_labels.txt', 'data/train/images')
-    valid = LabeledImageDataset('data/train/valid_labels.txt', 'data/valid/images')
-    #独自サイズに変更
-    def transform(in_data):
-        img, label = in_data
-        img = resize(img, (224, 224))
-        return img, label
-    #image labelの順で入ってる
-    train = TransformDataset(train, transform)
-    valid = TransformDataset(valid, transform)
+    # train = LabeledImageDataset('data/train/train_labels.txt', 'data/train/images')
+    # valid = LabeledImageDataset('data/train/valid_labels.txt', 'data/valid/images')
+    # #独自サイズに変更
+    # def transform(in_data):
+    #     img, label = in_data
+    #     img = resize(img, (224, 224))
+    #     return img, label
+    # #image labelの順で入ってる
+    # train = TransformDataset(train, transform)
+    # valid = TransformDataset(valid, transform)
+
+    if train_dataset is None and valid_dataset is None and test_dataset is None:
+        train_val, test = cifar.get_cifar10()
+        train_size = int(len(train_val) * 0.9)
+        train, valid = chainer.datasets.split_dataset_random(train_val, train_size, seed=0)
+    else:
+        train, valid, test = train_dataset, valid_dataset, test_dataset
 
     # 2. Iterator
     train_iter = iterators.MultiprocessIterator(train, batchsize)
@@ -35,7 +47,7 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=N
     optimizer.add_hook(chainer.optimizer.WeightDecay(0.0005))
 
     # 5. Updater
-    updater = training.StasndardUpdater(train_iter, optimizer, device=gpu_id)
+    updater = training.StandardUpdater(train_iter, optimizer, device=gpu_id)
 
     # 6. Trainer
     trainer = training.Trainer(updater, (max_epoch, 'epoch'), out='{}_cifar10_{}result'.format(network_object.__class__.__name__, postfix))
@@ -61,15 +73,15 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=N
     return net
 
 def main():
-    chainer.cuda.set_max_workspace_size(512 * 1024 * 1024)
-    chainer.config.autotune = True
-    import configparser
+    # chainer.cuda.set_max_workspace_size(512*1024*1024)
+    # #chainer.cuda.set_max_workspace_size(512 * 1024 * 1024)
+    # chainer.config.autotune = True
+
     ini = configparser.ConfigParser()
     ini.read('./config.ini', 'UTF-8')
-    max_epoch = ini['max_epoch']
-    base_lr
-
-    model = train(ResNet(10), max_epoch=100, base_lr=0.1, lr_decay=(30, 'epoch'))
+    max_epoch = ini['data']['max_epoch']
+    # base_lr
+    model = train(ResNet.DeepCNN(10), max_epoch=max_epoch, base_lr=0.1, lr_decay=(30, 'epoch'))
 
 
 if __name__ == "__main__":
