@@ -23,7 +23,7 @@ class MLP(chainer.Chain):
     def forward(self, x):
         h1 = F.relu(self.l1(x))
         h2 = F.relu(self.l2(h1))
-        return self.l3(h2)
+        return self.l3(h2)w
 
 
 def main():
