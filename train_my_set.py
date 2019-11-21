@@ -10,7 +10,7 @@ from chainer.datasets import TransformDataset
 from chainer import optimizers
 from chainer.datasets import LabeledImageDataset
 from chainer.training import extensions
-import train_network as ResNet
+import train_network as Net
 import configparser
 
 def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=None, valid_dataset=None, test_dataset=None, postfix='', base_lr=0.01, lr_decay=None):
@@ -28,6 +28,7 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=N
     # train = TransformDataset(train, transform)
     # valid = TransformDataset(valid, transform)
 
+    # cifer10で学習(いちおう)
     if train_dataset is None and valid_dataset is None and test_dataset is None:
         train_val, test = cifar.get_cifar10()
         train_size = int(len(train_val) * 0.9)
@@ -43,7 +44,10 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=N
     net = L.Classifier(network_object)
 
     # 4. Optimizer
-    optimizer = optimizers.MomentumSGD(lr=base_lr).setup(net)
+    # SDGじゃなくて Adam使う
+    # optimizer = optimizers.MomentumSGD(lr=base_lr).setup(net)
+    optimizer = optimizers.Adam(lr=base_lr).setup(net)
+    # 重みの発散を抑える
     optimizer.add_hook(chainer.optimizer.WeightDecay(0.0005))
 
     # 5. Updater
@@ -61,6 +65,12 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=N
     trainer.extend(extensions.PlotReport(['main/accuracy', 'val/main/accuracy'], x_key='epoch', file_name='accuracy.png'))
     if lr_decay is not None:
         trainer.extend(extensions.ExponentialShift('lr', 0.1), trigger=lr_decay)
+    
+    print('Device: {}'.format(device))
+    print('# unit: {}'.format(args.unit))
+    print('# Minibatch-size: {}'.format(args.batchsize))
+    print('# epoch: {}'.format(args.epoch))
+    print('')
     trainer.run()
     del trainer
 
@@ -86,7 +96,8 @@ def main():
     baseh_lr = ini['base_lr']
     lr_decay = ini['lr_decay']
 
-    model = train(ResNet.DeepCNN(10), max_epoch=max_epoch, base_lr=0.1, lr_decay=(30, 'epoch'))
+    # ResNet 多分動くはず
+    model = train(Net.ResNet(ResBlock), batch_size=batch_size , gpu_id=gpu_id, max_epoch=max_epoch, base_lr=base_lr, lr_decay=lr_decay)
 
 
 if __name__ == "__main__":
