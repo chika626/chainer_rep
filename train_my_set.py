@@ -1,4 +1,5 @@
 import chainer
+import argparse
 from chainer import training
 from chainer.datasets import cifar
 from chainer.datasets import mnist
@@ -70,6 +71,7 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=N
     print('# unit: {}'.format(args.unit))
     print('# Minibatch-size: {}'.format(args.batchsize))
     print('# epoch: {}'.format(args.epoch))
+    print('# gpu_id: {}'.format(gpu_id))
     print('')
     trainer.run()
     del trainer
