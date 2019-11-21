@@ -79,8 +79,13 @@ def main():
 
     ini = configparser.ConfigParser()
     ini.read('./config.ini', 'UTF-8')
+    batchsize = ini['batchsize']
     max_epoch = ini['max_epoch']
-    # base_lr
+    gpu_id = ini['gpu_id']
+    postfix = ini['postfix']
+    baseh_lr = ini['base_lr']
+    lr_decay = ini['lr_decay']
+
     model = train(ResNet.DeepCNN(10), max_epoch=max_epoch, base_lr=0.1, lr_decay=(30, 'epoch'))
 
 
