@@ -24,7 +24,7 @@ class ConvBlock(chainer.Chain):
             h = F.dropout(h, ratio=0.25)
         return h
 
-class LinearBlock(chainer.Chain):
+class LinearBlock(chainer.Chain): 
 
     def __init__(self, drop=False):
         w = chainer.initializers.HeNormal()
@@ -62,3 +62,16 @@ class DeepCNN(chainer.ChainList):
         return x
 
 #ここからResNet
+
+class ResBlock(chainer.Chain):
+    def __init__(self,n_in,n_out,stride=1,ksize=1):
+        w = math.sqrt(2)
+        super(ResBlock,self).__init__(
+            conv1=L.Convolution2D(n_in,n_out,3,stride,1,w),
+            bn1=L.BatchNormalization(n_out),
+            conv2=L.Convolution2D(n_out,n_out,3,1,1,w),
+            bn2=BatchNormalization(n_out),
+        )
+    def __call__(self,x,train):
+        h = F.relu(self.bn1(self.conv1(x),test=not train))
+        
