@@ -6,6 +6,7 @@ from chainer.datasets import mnist
 import chainer.links as L
 import chainer.functions as F
 from chainer import iterators
+import numpy as np
 #from chainercv.transforms import resize
 from chainer.datasets import TransformDataset
 from chainer import optimizers
@@ -114,9 +115,12 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=N
     trainer.extend(extensions.LogReport())
     trainer.extend(extensions.observe_lr())
     trainer.extend(extensions.Evaluator(valid_iter, net, device=gpu_id), name='val')
-    trainer.extend(extensions.PrintReport(['epoch', 'main/loss', 'main/accuracy', 'val/main/loss', 'val/main/accuracy', 'elapsed_time', 'lr']))
+    trainer.extend(extensions.PrintReport(['epoch', 'main/loss', 'main/accuracy', 'val/main/loss', 'val/main/accuracy', 'elapsed_time', 'lr']), call_before_training=True)
     trainer.extend(extensions.PlotReport(['main/loss', 'val/main/loss'], x_key='epoch', file_name='loss.png'))
     trainer.extend(extensions.PlotReport(['main/accuracy', 'val/main/accuracy'], x_key='epoch', file_name='accuracy.png'))
+    # Print a progress bar to stdout
+    trainer.extend(extensions.ProgressBar())
+
     if lr_decay is not None:
         trainer.extend(extensions.ExponentialShift('lr', 0.1), trigger=lr_decay)
     trainer.run()
@@ -147,7 +151,9 @@ def main():
 
     # ResNet 多分動くはず
     #model = train(Net.DeepCNN(10), batchsize=batchsize , gpu_id=gpu_id,  max_epoch=max_epoch, postfix=postfix , base_lr=base_lr, lr_decay=lr_decay)
-    model = train(Net.DeepCNN(10), max_epoch=_max_epoch, base_lr=_base_lr, lr_decay=(_lr_decay,'epoch'))
+    x = np.random.randn(1, 3, 32, 32).astype(np.float32)
+    net = Net.ResNet(10)
+    model = train(net(x), max_epoch=_max_epoch, base_lr=_base_lr, lr_decay=(_lr_decay,'epoch'))
 
 if __name__ == "__main__":
     main()

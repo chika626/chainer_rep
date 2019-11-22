@@ -153,10 +153,3 @@ class ResNet152(ResNet):
 
     def __init__(self, n_class=10):
         super(ResNet152, self).__init__(n_class, [3, 8, 36, 3])
-
-
-if __name__ == '__main__':
-    import numpy as np
-    x = np.random.randn(1, 3, 32, 32).astype(np.float32)
-    model = ResNet(10)
-    y = model(x)
