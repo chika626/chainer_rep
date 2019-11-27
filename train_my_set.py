@@ -155,5 +155,7 @@ def main():
     net = Net.ResNet(10)
     model = train(net(x), max_epoch=_max_epoch, base_lr=_base_lr, lr_decay=(_lr_decay,'epoch'))
 
+    # コンフリクトテスト
+
 if __name__ == "__main__":
     main()
