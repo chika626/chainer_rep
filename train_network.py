@@ -10,6 +10,10 @@ from chainer import iterators
 from chainer.datasets import TransformDataset
 from chainer import optimizers
 
+class Box(chainer.Chain):
+    def __init__(self,n_in,n_mid,n_out,stride,pad):
+
+
 class ConvBlock(chainer.Chain):
 
     def __init__(self, n_ch, pool_drop=False):
