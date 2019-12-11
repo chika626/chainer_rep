@@ -10,8 +10,8 @@ from chainer import iterators
 from chainer.datasets import TransformDataset
 from chainer import optimizers
 
-class Box(chainer.Chain):
-    def __init__(self,n_in,n_mid,n_out,stride,pad):
+# class Box(chainer.Chain):
+#     def __init__(self,n_in,n_mid,n_out,stride,pad):
 
 
 class ConvBlock(chainer.Chain):
@@ -67,7 +67,6 @@ class DeepCNN(chainer.ChainList):
         for f in self:
             x = f(x)
         return x
-
 
 # 信用できそうなResNet実装
 

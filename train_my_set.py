@@ -13,6 +13,7 @@ from chainer import optimizers
 from chainer.datasets import LabeledImageDataset
 from chainer.training import extensions
 import train_network as Net
+import data_set as dataset
 import configparser
 
 # def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=None, valid_dataset=None, test_dataset=None, postfix='', base_lr=0.01, lr_decay=None):
@@ -115,7 +116,8 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=N
     trainer.extend(extensions.LogReport())
     trainer.extend(extensions.observe_lr())
     trainer.extend(extensions.Evaluator(valid_iter, net, device=gpu_id), name='val')
-    trainer.extend(extensions.PrintReport(['epoch', 'main/loss', 'main/accuracy', 'val/main/loss', 'val/main/accuracy', 'elapsed_time', 'lr']), call_before_training=True)
+    #trainer.extend(extensions.PrintReport(['epoch', 'main/loss', 'main/accuracy', 'val/main/loss', 'val/main/accuracy', 'elapsed_time', 'lr']), call_before_training=True)
+    trainer.extend(extensions.PrintReport(['epoch', 'main/loss', 'main/accuracy', 'val/main/loss', 'val/main/accuracy', 'l1/W/data/std', 'elapsed_time']))
     trainer.extend(extensions.PlotReport(['main/loss', 'val/main/loss'], x_key='epoch', file_name='loss.png'))
     trainer.extend(extensions.PlotReport(['main/accuracy', 'val/main/accuracy'], x_key='epoch', file_name='accuracy.png'))
     # Print a progress bar to stdout
@@ -150,10 +152,13 @@ def main():
     _lr_decay = int(ini['data']['lr_decay'])
 
     # ResNet 多分動くはず
-    #model = train(Net.DeepCNN(10), batchsize=batchsize , gpu_id=gpu_id,  max_epoch=max_epoch, postfix=postfix , base_lr=base_lr, lr_decay=lr_decay)
-    x = np.random.randn(1, 3, 32, 32).astype(np.float32)
-    net = Net.ResNet(10)
-    model = train(net(x), max_epoch=_max_epoch, base_lr=_base_lr, lr_decay=(_lr_decay,'epoch'))
+    #odel = train(Net.DeepCNN(10), batchsize=_batchsize , gpu_id=_gpu_id,  max_epoch=_max_epoch, postfix=_postfix , base_lr=_base_lr, lr_decay=(_lr_decay,'epoch'))
+    #x = np.random.randn(1, 3, 32, 32).astype(np.float32)
+    #net = Net.ResNet(10)
+    #model = train(net(x), max_epoch=_max_epoch, base_lr=_base_lr, lr_decay=(_lr_decay,'epoch'))
+
+    #model = train(Net.DeepCNN(10), max_epoch=100, train_dataset=dataset.CIFAR10Augmented(), valid_dataset=dataset.CIFAR10Augmented('valid'), test_dataset=dataset.CIFAR10Augmented('test'), postfix='augmented_', base_lr=0.1, lr_decay=(30, 'epoch'))
+    model = train(Net.ResNet(10), max_epoch=100, train_dataset=dataset.CIFAR10Augmented(), valid_dataset=dataset.CIFAR10Augmented('valid'), test_dataset=dataset.CIFAR10Augmented('test'), postfix='augmented_', base_lr=0.1, lr_decay=(30, 'epoch'))
 
     # コンフリクトテスト
 
