@@ -15,6 +15,8 @@ from chainer.training import extensions
 import train_network as Net
 import data_set as dataset
 import configparser
+from chainer import serializers
+import datetime
 
 # def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=None, valid_dataset=None, test_dataset=None, postfix='', base_lr=0.01, lr_decay=None):
 
@@ -110,7 +112,7 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=N
     updater = training.StandardUpdater(train_iter, optimizer, device=gpu_id)
 
     # 6. Trainer
-    trainer = training.Trainer(updater, (max_epoch, 'epoch'), out='{}_cifar10_{}result'.format(network_object.__class__.__name__, postfix))
+    trainer = training.Trainer(updater, (max_epoch, 'epoch'), out='{}_cifar1002_{}result'.format(network_object.__class__.__name__, postfix))
 
     # 7. Trainer extensions
     trainer.extend(extensions.LogReport())
@@ -122,6 +124,14 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=N
     trainer.extend(extensions.PlotReport(['main/accuracy', 'val/main/accuracy'], x_key='epoch', file_name='accuracy.png'))
     # Print a progress bar to stdout
     trainer.extend(extensions.ProgressBar())
+    # OutPut Network.dot
+    trainer.extend(extensions.dump_graph('main/loss'))
+
+
+    # output infomation
+    print('gpu_id : ',gpu_id)
+    print('batchsize : ',batchsize)
+
 
     if lr_decay is not None:
         trainer.extend(extensions.ExponentialShift('lr', 0.1), trigger=lr_decay)
@@ -158,9 +168,13 @@ def main():
     #model = train(net(x), max_epoch=_max_epoch, base_lr=_base_lr, lr_decay=(_lr_decay,'epoch'))
 
     #model = train(Net.DeepCNN(10), max_epoch=100, train_dataset=dataset.CIFAR10Augmented(), valid_dataset=dataset.CIFAR10Augmented('valid'), test_dataset=dataset.CIFAR10Augmented('test'), postfix='augmented_', base_lr=0.1, lr_decay=(30, 'epoch'))
-    model = train(Net.ResNet(10), max_epoch=100, train_dataset=dataset.CIFAR10Augmented(), valid_dataset=dataset.CIFAR10Augmented('valid'), test_dataset=dataset.CIFAR10Augmented('test'), postfix='augmented_', base_lr=0.1, lr_decay=(30, 'epoch'))
+    model = train(Net.ResNet(10), max_epoch=30, train_dataset=dataset.CIFAR10Augmented(), valid_dataset=dataset.CIFAR10Augmented('valid'), test_dataset=dataset.CIFAR10Augmented('test'), postfix='augmented_', base_lr=0.1, lr_decay=(10, 'epoch'))
 
-    # コンフリクトテスト
+    #output network
+    dt_now = datetime.datetime.now()
+    serializers.save_npz('{}_{}_{}.model'.format(dt_now.year,dt_now.month,dt_now.day),model)
+    
+    
 
 if __name__ == "__main__":
     main()
