@@ -87,7 +87,7 @@ import datetime
 #     return net
 
 
-def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=None, valid_dataset=None, test_dataset=None, postfix='', base_lr=0.01, lr_decay=None):
+def train(network_object, batchsize=128, gpu_id=0, max_epoch=30, train_dataset=None, valid_dataset=None, test_dataset=None, postfix='', base_lr=0.01, lr_decay=None,out_dump=true):
 
     # 1. Dataset
     if train_dataset is None and valid_dataset is None and test_dataset is None:
@@ -125,7 +125,8 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=20, train_dataset=N
     # Print a progress bar to stdout
     trainer.extend(extensions.ProgressBar())
     # OutPut Network.dot
-    trainer.extend(extensions.dump_graph('main/loss'))
+    if out_dump
+        trainer.extend(extensions.dump_graph('main/loss'))
 
 
     # output infomation
@@ -154,12 +155,14 @@ def main():
 
     ini = configparser.ConfigParser()
     ini.read('./config.ini', 'UTF-8')
-    _batchsize = int(ini['data']['batchsize'])
-    _max_epoch = int(ini['data']['max_epoch'])
-    _gpu_id = int(ini['data']['gpu_id'])
-    _postfix = ini['data']['postfix']
-    _base_lr = float(ini['data']['base_lr'])
-    _lr_decay = int(ini['data']['lr_decay'])
+    s_0 = 'train'
+    _batchsize = int(ini[s_0]['batchsize'])
+    _max_epoch = int(ini[s_0]['max_epoch'])
+    _gpu_id = int(ini[s_0]['gpu_id'])
+    _postfix = ini[s_0]['postfix']
+    _base_lr = float(ini[s_0]['base_lr'])
+    _lr_decay = int(ini[s_0]['lr_decay'])
+    _out_dump = bool(ini[s_0]['out_dump'])
 
     # ResNet 多分動くはず
     #odel = train(Net.DeepCNN(10), batchsize=_batchsize , gpu_id=_gpu_id,  max_epoch=_max_epoch, postfix=_postfix , base_lr=_base_lr, lr_decay=(_lr_decay,'epoch'))
@@ -167,10 +170,21 @@ def main():
     #net = Net.ResNet(10)
     #model = train(net(x), max_epoch=_max_epoch, base_lr=_base_lr, lr_decay=(_lr_decay,'epoch'))
 
-    #model = train(Net.DeepCNN(10), max_epoch=100, train_dataset=dataset.CIFAR10Augmented(), valid_dataset=dataset.CIFAR10Augmented('valid'), test_dataset=dataset.CIFAR10Augmented('test'), postfix='augmented_', base_lr=0.1, lr_decay=(30, 'epoch'))
-    model = train(Net.ResNet(10), max_epoch=30, train_dataset=dataset.CIFAR10Augmented(), valid_dataset=dataset.CIFAR10Augmented('valid'), test_dataset=dataset.CIFAR10Augmented('test'), postfix='augmented_', base_lr=0.1, lr_decay=(10, 'epoch'))
+    # これで動いてた
+    model = train(Net.ResNet(10),
+     batchsize=_batchsize,
+     gpu_id=_gpu_id
+     max_epoch=_max_epoch, 
+     train_dataset=dataset.CIFAR10Augmented(),
+     valid_dataset=dataset.CIFAR10Augmented('valid'),
+     test_dataset=dataset.CIFAR10Augmented('test'),
+     postfix=_postfix, 
+     base_lr=_base_lr, 
+     lr_decay=(_lr_decay, 'epoch'),
+     out_dump=_out_dump
+    )
 
-    #output network
+    #output model
     dt_now = datetime.datetime.now()
     serializers.save_npz('{}_{}_{}.model'.format(dt_now.year,dt_now.month,dt_now.day),model)
     
