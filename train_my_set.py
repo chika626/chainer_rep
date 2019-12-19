@@ -20,7 +20,7 @@ import datetime
 
 
 
-def train(network_object, batchsize=128, gpu_id=0, max_epoch=30, train_dataset=None, valid_dataset=None, test_dataset=None, postfix='', base_lr=0.01, lr_decay=None,out_dump=true):
+def train(network_object, batchsize=128, gpu_id=0, max_epoch=30, train_dataset=None, valid_dataset=None, test_dataset=None, postfix='', base_lr=0.01, lr_decay=None,out_dump=True):
 
     # 1. Dataset
     if train_dataset is None and valid_dataset is None and test_dataset is None:
@@ -68,7 +68,7 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=30, train_dataset=N
     # Print a progress bar to stdout
     trainer.extend(extensions.ProgressBar())
     # OutPut Network.dot
-    if out_dump
+    if out_dump:
         trainer.extend(extensions.dump_graph('main/loss'))
 
 
@@ -111,7 +111,7 @@ def main():
     # ResNet(最終出力数)
     model = train(Net.ResNet(10),
      batchsize=_batchsize,
-     gpu_id=_gpu_id
+     gpu_id=_gpu_id,
      max_epoch=_max_epoch, 
      train_dataset=dataset.CIFAR10Augmented(),
      valid_dataset=dataset.CIFAR10Augmented('valid'),
