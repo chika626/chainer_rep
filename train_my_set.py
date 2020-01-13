@@ -109,19 +109,22 @@ def main():
 
     # これで動いてた
     # ResNet(最終出力数)
-    model = train(Net.ResNet(10),
-     batchsize=_batchsize,
-     gpu_id=_gpu_id,
-     max_epoch=_max_epoch, 
-     train_dataset=dataset.CIFAR10Augmented(),
-     valid_dataset=dataset.CIFAR10Augmented('valid'),
-     test_dataset=dataset.CIFAR10Augmented('test'),
-     postfix=_postfix, 
-     base_lr=_base_lr, 
-     lr_decay=(_lr_decay, 'epoch'),
-     out_dump=_out_dump
-    )
+    # model = train(Net.ResNet(10),
+    #  batchsize=_batchsize,
+    #  gpu_id=_gpu_id,
+    #  max_epoch=_max_epoch, 
+    #  train_dataset=dataset.CIFAR10Augmented(),
+    #  valid_dataset=dataset.CIFAR10Augmented('valid'),
+    #  test_dataset=dataset.CIFAR10Augmented('test'),
+    #  postfix=_postfix, 
+    #  base_lr=_base_lr, 
+    #  lr_decay=(_lr_decay, 'epoch'),
+    #  out_dump=_out_dump
+    # )
 
+    # model = train(Net.DeepCNN(10))
+    model = train(Net.ResNet(10))
+    
     #output model
     dt_now = datetime.datetime.now()
     serializers.save_npz('{}_{}_{}.model'.format(dt_now.year,dt_now.month,dt_now.day),model)
