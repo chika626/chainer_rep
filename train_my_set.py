@@ -122,8 +122,7 @@ def main():
     #  out_dump=_out_dump
     # )
 
-    # model = train(Net.DeepCNN(10))
-    model = train(Net.ResNet(10))
+    model = train(Net.DeepCNN(10), lr_decay=(10, 'epoch'))
     
     #output model
     dt_now = datetime.datetime.now()
