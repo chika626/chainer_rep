@@ -20,7 +20,7 @@ import datetime
 
 
 
-def train(network_object, batchsize=128, gpu_id=0, max_epoch=30, train_dataset=None, valid_dataset=None, test_dataset=None, postfix='', base_lr=0.01, lr_decay=None,out_dump=True):
+def train(network_object, batchsize=128, gpu_id=0, max_epoch=30, train_dataset=None, valid_dataset=None, test_dataset=None, postfix='', base_lr=0.01, lr_decay=None,out_dump=True,folder_path=''):
 
     # 1. Dataset
     if train_dataset is None and valid_dataset is None and test_dataset is None:
@@ -56,7 +56,7 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=30, train_dataset=N
     updater = training.StandardUpdater(train_iter, optimizer, device=gpu_id)
 
     # 6. Trainer
-    trainer = training.Trainer(updater, (max_epoch, 'epoch'), out='{}_cifar1002_{}result'.format(network_object.__class__.__name__, postfix))
+    trainer = training.Trainer(updater, (max_epoch, 'epoch'), out='{}/{}result'.format(folder_path, postfix))
 
     # 7. Trainer extensions
     trainer.extend(extensions.LogReport())
@@ -92,10 +92,7 @@ def train(network_object, batchsize=128, gpu_id=0, max_epoch=30, train_dataset=N
 
 
 def main():
-    # chainer.cuda.set_max_workspace_size(512*1024*1024)
-    # #chainer.cuda.set_max_workspace_size(512 * 1024 * 1024)
-    # chainer.config.autotune = True
-
+    # .iniファイルから、ハイパパラメータ群を読み出す
     ini = configparser.ConfigParser()
     ini.read('./config.ini', 'UTF-8')
     s_0 = 'train'
@@ -107,26 +104,31 @@ def main():
     _lr_decay = int(ini[s_0]['lr_decay'])
     _out_dump = bool(ini[s_0]['out_dump'])
 
-    # これで動いてた
-    # ResNet(最終出力数)
-    # model = train(Net.ResNet(10),
-    #  batchsize=_batchsize,
-    #  gpu_id=_gpu_id,
-    #  max_epoch=_max_epoch, 
-    #  train_dataset=dataset.CIFAR10Augmented(),
-    #  valid_dataset=dataset.CIFAR10Augmented('valid'),
-    #  test_dataset=dataset.CIFAR10Augmented('test'),
-    #  postfix=_postfix, 
-    #  base_lr=_base_lr, 
-    #  lr_decay=(_lr_decay, 'epoch'),
-    #  out_dump=_out_dump
-    # )
+    # 使用するネットワーク
+    net_obj = Net.DeepCNN(10)
 
-    model = train(Net.DeepCNN(10), lr_decay=(10, 'epoch'))
-    
-    #output model
+    # 学習で行ったデータ保持などをさせるフォルダパス
     dt_now = datetime.datetime.now()
-    serializers.save_npz('{}_{}_{}.model'.format(dt_now.year,dt_now.month,dt_now.day),model)
+    folder_path = '{}/{}_{}_{}'.format(net_obj.__class__.__name__,dt_now.year,dt_now.month,dt_now.day)
+
+    # 学習開始
+    # ResNet(最終出力数)
+    model = train(net_obj,
+     batchsize=_batchsize,
+     gpu_id=_gpu_id,
+     max_epoch=_max_epoch, 
+     train_dataset=dataset.CIFAR10Augmented(),
+     valid_dataset=dataset.CIFAR10Augmented('valid'),
+     test_dataset=dataset.CIFAR10Augmented('test'),
+     postfix=_postfix, 
+     base_lr=_base_lr, 
+     lr_decay=(_lr_decay, 'epoch'),
+     out_dump=_out_dump,
+     folder_path=folder_path
+    )
+    
+    # model の出力
+    serializers.save_npz('{}/out.model'.format(folder_path),model)
 
     
     
