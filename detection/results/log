@@ -1,0 +1,92 @@
+[
+    {
+        "main/loss": 7.465101718902588,
+        "main/loss/loc": 2.1405797004699707,
+        "main/loss/conf": 5.324522972106934,
+        "lr": 0.0001,
+        "epoch": 1,
+        "iteration": 3311,
+        "elapsed_time": 2168.1418498
+    },
+    {
+        "main/loss": 5.772858619689941,
+        "main/loss/loc": 1.6940863132476807,
+        "main/loss/conf": 4.078771114349365,
+        "lr": 0.0001,
+        "epoch": 2,
+        "iteration": 6621,
+        "elapsed_time": 4346.4988408
+    },
+    {
+        "main/loss": 5.246298313140869,
+        "main/loss/loc": 1.5517489910125732,
+        "main/loss/conf": 3.6945559978485107,
+        "lr": 0.0001,
+        "epoch": 3,
+        "iteration": 9931,
+        "elapsed_time": 6472.6293988
+    },
+    {
+        "main/loss": 4.727070331573486,
+        "main/loss/loc": 1.3851683139801025,
+        "main/loss/conf": 3.341897964477539,
+        "lr": 1e-05,
+        "epoch": 4,
+        "iteration": 13241,
+        "elapsed_time": 8595.9667068
+    },
+    {
+        "main/loss": 4.662174701690674,
+        "main/loss/loc": 1.3717514276504517,
+        "main/loss/conf": 3.2904374599456787,
+        "lr": 1e-05,
+        "epoch": 5,
+        "iteration": 16551,
+        "elapsed_time": 10719.011134299999
+    },
+    {
+        "main/loss": 4.600565433502197,
+        "main/loss/loc": 1.3535839319229126,
+        "main/loss/conf": 3.2469828128814697,
+        "lr": 1e-05,
+        "epoch": 6,
+        "iteration": 19862,
+        "elapsed_time": 12842.914504499999
+    },
+    {
+        "main/loss": 4.524432182312012,
+        "main/loss/loc": 1.3314859867095947,
+        "main/loss/conf": 3.1929492950439453,
+        "lr": 1.0000000000000002e-06,
+        "epoch": 7,
+        "iteration": 23172,
+        "elapsed_time": 14973.3769631
+    },
+    {
+        "main/loss": 4.526302337646484,
+        "main/loss/loc": 1.3264065980911255,
+        "main/loss/conf": 3.199892282485962,
+        "lr": 1.0000000000000002e-06,
+        "epoch": 8,
+        "iteration": 26482,
+        "elapsed_time": 17103.035743099997
+    },
+    {
+        "main/loss": 4.52318000793457,
+        "main/loss/loc": 1.3352289199829102,
+        "main/loss/conf": 3.187955141067505,
+        "lr": 1.0000000000000002e-06,
+        "epoch": 9,
+        "iteration": 29792,
+        "elapsed_time": 19273.6528264
+    },
+    {
+        "main/loss": 4.519404888153076,
+        "main/loss/loc": 1.3256187438964844,
+        "main/loss/conf": 3.1937901973724365,
+        "lr": 1.0000000000000002e-07,
+        "epoch": 10,
+        "iteration": 33102,
+        "elapsed_time": 21602.3245211
+    }
+]
