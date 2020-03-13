@@ -1,6 +1,10 @@
 import argparse
 import copy
 import numpy as np
+import pickle
+from PIL import Image
+import matplotlib.pyplot as plt
+import crate_dataset as c_d
 
 import chainer
 from chainer.datasets import ConcatenatedDataset
@@ -111,18 +115,21 @@ def main():
     # cuDNNのautotuneを有効にする
     chainer.cuda.set_max_workspace_size(512 * 1024 * 1024)
     chainer.config.autotune = True
+    chainer.config.cv_resize_backend = "cv2"
 
     gpu_id = 0
-    batchsize = 5
+    batchsize = 8
     out_num = 'results'
     log_interval = 1, 'epoch'
-    epoch_max = 10
+    epoch_max = 100
     initial_lr = 0.0001
     lr_decay_rate = 0.1
-    lr_decay_timing = [3, 6, 9]
+    lr_decay_timing = [20, 40, 60, 80]
+
+    majomoji_label="A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"
 
     # モデルの設定
-    model = SSD512(n_fg_class=len(voc_bbox_label_names), pretrained_model='imagenet')
+    model = SSD512(n_fg_class=len(majomoji_label), pretrained_model='imagenet')
     model.use_preset('evaluate')
     train_chain = MultiboxTrainChain(model)
 
@@ -131,11 +138,17 @@ def main():
     model.to_gpu()
 
     # データセットの設定
-    train_dataset = ConcatenatedDataset(
-            VOCBboxDataset(year='2007', split='trainval'),
-            VOCBboxDataset(year='2012', split='trainval'))
-   
-    
+    # train_dataset = ConcatenatedDataset(
+    #         VOCBboxDataset(year='2007', split='trainval'),
+    #         VOCBboxDataset(year='2012', split='trainval'))
+
+
+    # train_dataset=VOCBboxDataset(year='2007', split='trainval')
+    train_dataset=c_d.crate()
+    # with open('majomoji.pickle', mode='rb') as f:
+    #     train_dataset=pickle.load(f)
+    print('data_size = ',len(train_dataset))
+    print('load')
 
     # データ拡張
     transformed_train_dataset = TransformDataset(train_dataset, Transform(model.coder, model.insize, model.mean))
@@ -167,7 +180,7 @@ def main():
     trainer.extend(extensions.LogReport(trigger=log_interval))
     trainer.extend(extensions.observe_lr(), trigger=log_interval)
     trainer.extend(extensions.PrintReport(['epoch', 'iteration', 'lr', 'main/loss', 'main/loss/loc', 'main/loss/conf', 'validation/main/map', 'elapsed_time']), trigger=log_interval)
-    trainer.extend(extensions.ProgressBar(update_interval=10))
+    trainer.extend(extensions.ProgressBar(update_interval=5))
 
     if extensions.PlotReport.available():
         trainer.extend(
@@ -178,14 +191,14 @@ def main():
             extensions.PlotReport(
                 ['validation/main/map'],
                 'epoch', file_name='accuracy.png'))
-    trainer.extend(extensions.snapshot(filename='snapshot_epoch_{.updater.epoch}.npz'), trigger=(10, 'epoch'))
 
     # 学習実行
+    print('start')
     trainer.run()
 
     # 学習データの保存
     model.to_cpu()
-    serializers.save_npz('my_ssd_model.npz', model)
+    serializers.save_npz('33my_ssd_model.npz', model)
 
 
 if __name__ == '__main__':
