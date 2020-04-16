@@ -1,6 +1,6 @@
 import json
 import math
-from PIL import Image
+from PIL import Image,ImageDraw
 import pandas as pd
 import glob
 import argparse
@@ -34,210 +34,262 @@ from chainercv.links.model.ssd import random_crop_with_bbox_constraints
 from chainercv.links.model.ssd import random_distort
 from chainercv.links.model.ssd import resize_with_random_interpolation
 
-def take_json(json_path):
-    # jsonのload
+def contrast(imgs,step):
+    num=[]
+    for i in range(step-1):
+        num.append(pow(2,(i+1)))
+        num.append(pow(1/2,(i+1)))
+    images = []
+    for img in imgs:
+        for n in num:
+            con_img=ImageEnhance.Contrast(img).enhance(n)
+            images.append(con_img)
+    return images
+
+def saturation(imgs,step):
+    num=[]
+    for i in range(step-1):
+        num.append(pow(2,(i+1)))
+        num.append(pow(1/2,(i+1)))
+    images = []
+    for img in imgs:
+        for n in num:
+            con_img=ImageEnhance.Color(img).enhance(n)
+            images.append(con_img)
+    return images
+
+def brightness(imgs,step):
+    num=[]
+    for i in range(step-1):
+        num.append(pow(2,(i+1)))
+        num.append(pow(1/2,(i+1)))
+    images = []
+    for img in imgs:
+        for n in num:
+            con_img=ImageEnhance.Brightness(img).enhance(n)
+            images.append(con_img)
+    return images
+
+
+def one_take_json(json_path):
     with open(json_path) as f:
         result=json.load(f)
-    
-    # 画像とる
+
     img_path='majomoji/Image/'+result['asset']['name']
-    img=Image.open(img_path).resize((result['asset']['size']['width'],result['asset']['size']['height'])).convert('RGB')
-    img=np.transpose(img,(2,0,1))
-    
+    img=Image.open(img_path).convert('RGB')
+
     # 1つのjsonにいくつも領域があるのでforで回す
     M=len(result['regions'])
-    bboxes ,labels = [] ,[]
+    res_imgs,res_bboxes,res_labels=[],[],[]
     for i in range(M):
         # 4座標の加工 intなので切り捨てと切り上げで大きく取ることで対応
         x0=math.floor(result['regions'][i]['points'][0]['x'])
         y0=math.floor(result['regions'][i]['points'][0]['y'])
         x1=math.ceil(result['regions'][i]['points'][2]['x'])
         y1=math.ceil(result['regions'][i]['points'][2]['y'])
-        bbox=[y0,x0,y1,x1]
-        bboxes.append(bbox)
-        # Labelもとる
+        # 中心とって正方形で対応
+        dy=y1-y0
+        dx=x1-x0
+        dxy=max(dy,dx) / 2
+        center_y=(y1+y0)/2
+        center_x=(x1+x0)/2
+        bbox=[0,0,dxy*2,dxy*2 ]
+        
+        take_img=img.crop((center_x - dxy , center_y - dxy , center_x + dxy , center_y + dxy))
+        res_imgs.append(take_img)
+        bboxes=[bbox]
+        res_bboxes.append(bboxes)
         c=result['regions'][i]['tags'][0]
         c=ord(c)
-        labels.append(c-65)
+        labels=[c-65]
+        res_labels.append(labels)
+    res_bboxes=np.array(res_bboxes,'f')
+    res_labels=np.array(res_labels,'i')
+    return res_imgs,res_bboxes,res_labels
 
-    # 数列に変換
-    img=np.array(img,'f')
-    bboxes=np.array(bboxes,'f')
-    labels=np.array(labels,'i')
-
-    return img_path,img,bboxes,labels
-
-def contrast(img):
-    min_contrast=0.1
-    max_contrast=2.0
-    d_contrast=0.3
-
-    num = min_contrast
-    images = []
-    while num < max_contrast:
-        con_img=ImageEnhance.Contrast(img).enhance(num)
-        con_img=np.transpose(con_img,(2,0,1))
-        con_img=np.array(con_img,'f')
-        images.append(con_img)
-        num += d_contrast
-
-    return images
-
-def saturation(img):
-    min_saturation=0.1
-    max_saturation=2.0
-    d_saturation=0.3
-
-    num = min_saturation
-    images = []
-    while num < max_saturation:
-        con_img=ImageEnhance.Color(img).enhance(num)
-        con_img=np.transpose(con_img,(2,0,1))
-        con_img=np.array(con_img,'f')
-        images.append(con_img)
-        num += d_saturation
-
-    return images
-
-def brightness(img):
-    min_brightness=0.1
-    max_brightness=2.0
-    d_brightness=0.3
-
-    num = min_brightness
-    images = []
-    while num < max_brightness:
-        con_img=ImageEnhance.Brightness(img).enhance(num)
-        con_img=np.transpose(con_img,(2,0,1))
-        con_img=np.array(con_img,'f')
-        images.append(con_img)
-        num += d_brightness
-
-    return images
-
-
-
-def take_path_box_label(json_path):
-    # jsonのload
+def cut_512(json_path):
+    # json開く
     with open(json_path) as f:
         result=json.load(f)
-    
-    # 画像とる
+
+    # 画像をとる
     img_path='majomoji/Image/'+result['asset']['name']
-    
-    # 1つのjsonにいくつも領域があるのでforで回す
+    img=Image.open(img_path).convert('RGB')
+    # img=Image.open(img_path).convert("L")
+    # img=img.convert("RGB")
+
+    # 画像サイズとっておく
+    H , W = result['asset']['size']['height'] , result['asset']['size']['width']
+
+    # bboxesを先に全部回収しておく
     M=len(result['regions'])
-    bboxes ,labels = [] ,[]
+    bboxes=[]
+    res_center_label=[]
     for i in range(M):
-        # 4座標の加工 intなので切り捨てと切り上げで大きく取ることで対応
+        # 4座標とる
         x0=math.floor(result['regions'][i]['points'][0]['x'])
         y0=math.floor(result['regions'][i]['points'][0]['y'])
         x1=math.ceil(result['regions'][i]['points'][2]['x'])
         y1=math.ceil(result['regions'][i]['points'][2]['y'])
         bbox=[y0,x0,y1,x1]
-        bboxes.append(bbox)
-        # Labelもとる
         c=result['regions'][i]['tags'][0]
         c=ord(c)
-        labels.append(c-65)
-
-    # 数列に変換
-    bboxes=np.array(bboxes,'f')
-    labels=np.array(labels,'i')
-
-    return img_path,bboxes,labels
-
-def crate():
-    # json一覧を取得
-    json_path=glob.glob("majomoji/json/*")
-
-    imgs, bboxes, labels = [], [], []
-    # 全jsonについてやってく
-    for s in json_path:
-        # path , bbox , label を取る
-        path,bbox,label=take_path_box_label(s)
-
-        # 変換元画像を取っておく
-        img=Image.open(path).convert('RGB')
-        for image in contrast(img):
-            imgs.append(image)
-            bboxes.append(bbox)
-            labels.append(label)
-        for image in saturation(img):
-            imgs.append(image)
-            bboxes.append(bbox)
-            labels.append(label)
-        for image in brightness(img):
-            imgs.append(image)
-            bboxes.append(bbox)
-            labels.append(label)
- 
-    # datasetに変換
-    dataset=chainer.datasets.TupleDataset(imgs,bboxes,labels)
-
-    print('crate!')
-
-    return dataset
-
-def _crate():
-    # json一覧を取得
-    json_path=glob.glob("majomoji/json/*")
-
-    imgs, bboxes, labels = [], [], []
-    # 全jsonについてやってく
-    for s in json_path:
-        # path , bbox , label を取る
-        path,bbox,label=take_path_box_label(s)
-
-        # 変換元画像を取っておく
-        img=Image.open(path).convert('RGB')
-        img=np.transpose(img,(2,0,1))
-        img=np.array(img,'f')
-
-        imgs.append(img)
+        res_center_label.append(c-65)
         bboxes.append(bbox)
-        labels.append(label)
 
- 
+    # bboxの全部を列挙できたので
+    # 各bboxの中心から512*512の画像にする
+    res_imgs,res_bboxes,res_labels=[],[],[]
+    for i in range(M):
+        bbox=bboxes[i]
+        # 中心とる
+        center_y=(bbox[2]+bbox[0])/2
+        center_x=(bbox[3]+bbox[1])/2
+        # ここから256ずつの領域を切り出す
+        d_xy=256
+        size_xy=[center_x-d_xy,center_y-d_xy,center_x+d_xy,center_y+d_xy]
+        img_512=img.crop((size_xy[0],size_xy[1],size_xy[2],size_xy[3]))
+        res_imgs.append(img_512)
+        # この画像の中に含まれる文字を全部摘出する
+        bboxes_512 , labels_512=[],[]
+        for j in range(M):
+            if size_xy[0] < bboxes[j][1] and size_xy[1] < bboxes[j][0] and size_xy[2] > bboxes[j][3] and size_xy[3] > bboxes[j][2]:
+                # 内包されるbboxなので追加する
+                d_bbox=[bboxes[j][0]-size_xy[1],bboxes[j][1]-size_xy[0],bboxes[j][2]-size_xy[1],bboxes[j][3]-size_xy[0]]
+                bboxes_512.append(d_bbox)
+                c=result['regions'][j]['tags'][0]
+                c=ord(c)
+                labels_512.append(c-65)
+        bboxes_512=np.array(bboxes_512,'f')
+        labels_512=np.array(labels_512,'i')
+        res_bboxes.append(bboxes_512)
+        res_labels.append(labels_512)
+    
+    return res_imgs,res_bboxes,res_labels
+
+def crate(function,inf_con=False,inf_sat=False,inf_bri=False):
+     # json一覧を取得
+    json_path=glob.glob("majomoji/json/*")
+    majomoji_label="A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"
+    dictionary=[0]*26
+    imgs, bboxes, labels = [], [], []
+    # 全jsonについてやってく
+    for s in json_path:
+        # 512ごとに切り出す
+        imgs_512,bboxes_512,labels_512=function(s)
+        for i in range(len(imgs_512)):
+            # 512切り出し画像を1枚とる
+            img=imgs_512[i]
+            for j in labels_512[i]:
+                dictionary[j]+=1
+
+            # 手加える
+            change_imgs = [img]
+            t_img=[img]
+            if inf_con:
+                change_imgs.extend(contrast(t_img,2))
+            if inf_sat:
+                change_imgs.extend(saturation(t_img,2))
+            if inf_bri:
+                change_imgs.extend(brightness(t_img,2))
+
+            images_array=[]
+            for t_image in change_imgs:
+                tra_img=np.transpose(t_image,(2,0,1))
+                tra_img=np.array(tra_img,'f')
+                images_array.append(tra_img)
+
+            for image in images_array:
+                imgs.append(image)
+                bboxes.append(bboxes_512[i])
+                labels.append(labels_512[i])
     # datasetに変換
     dataset=chainer.datasets.TupleDataset(imgs,bboxes,labels)
 
     print('crate!')
 
-    return dataset
+    for i in range(26):
+        if i % 10 == 9:
+            print('[',majomoji_label[i],':',str(dictionary[i]).rjust(3),']')
+        else:
+            print('[',majomoji_label[i],':',str(dictionary[i]).rjust(3),']  ',end='')
+    print()
 
+    return dataset
 
 
 
 def main():
+    # ここ呼んだら全画像を作成して保存させる
     # json一覧を取得
     json_path=glob.glob("majomoji/json/*")
-
+    majomoji_label="A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"
+    dictionary=[0]*26
     imgs, bboxes, labels = [], [], []
+
+    # 選択
+    take_function=cut_512
+    inf_con = False
+    inf_sat = False
+    inf_bri = False
+
+    counter = 0
     # 全jsonについてやってく
     for s in json_path:
-        img_path,a,b,c = take_json(s)
-        for img in contrast(img_path):
-            imgs.append(img)
-            bboxes.append(b)
-            labels.append(c)
-        for img in saturation(img_path):
-            imgs.append(img)
-            bboxes.append(b)
-            labels.append(c)
-        for img in brightness(img_path):
-            imgs.append(img)
-            bboxes.append(b)
-            labels.append(c)
+        # 切り出し手法によって「画像」「bbox群」「label群」「その画像に含まれるlabelの種類と数」を返させる
+        imgs_512,bboxes_512,labels_512=take_function(s)
+        for i in range(len(imgs_512)):
+            # 512切り出し画像を1枚とる
+            img=imgs_512[i]
+
+            # 実際に合ってるか確認したい
+            cambass = ImageDraw.Draw(img)
+            for j in range(len(bboxes_512[i])):
+                # j文字あるって意味
+                y0 = bboxes_512[i][j][0]
+                x0 = bboxes_512[i][j][1]
+                y1 = bboxes_512[i][j][2]
+                x1 = bboxes_512[i][j][3]
+                cambass.line( ( (x0,y0) , (x0,y1) , (x1,y1) ,(x1,y0) , (x0 , y0) ) , fill=(255, 255, 0) ,width=10)
+            img.save('test/data_{}.png'.format(counter))
+            counter+=1
+            # 画像に含まれる全部の文字を学習数としてカウントする
+            for j in labels_512[i]:
+                dictionary[j]+=1
+
+            # 手加える
+            change_imgs = [img]
+            t_img=[img]
+            if inf_con:
+                change_imgs.extend(contrast(t_img,2))
+            if inf_sat:
+                change_imgs.extend(saturation(t_img,2))
+            if inf_bri:
+                change_imgs.extend(brightness(t_img,2))
+
+            images_array=[]
+            for t_image in change_imgs:
+                tra_img=np.transpose(t_image,(2,0,1))
+                tra_img=np.array(tra_img,'f')
+                images_array.append(tra_img)
+
+            for image in images_array:
+                imgs.append(image)
+                bboxes.append(bboxes_512[i])
+                labels.append(labels_512[i])
 
     # datasetに変換
     dataset=chainer.datasets.TupleDataset(imgs,bboxes,labels)
 
-    print(len(dataset))
+    print('crate!')
 
-    with open('majomoji.pickle', mode='wb') as f:
-        pickle.dump(dataset, f)
-
+    # 画像のうちわけ、含まれる数まで見たほうがいいと思うけどなぁ
+    for i in range(26):
+        if i % 10 == 9:
+            print(majomoji_label[i],':',str(dictionary[i]).rjust(3))
+        else:
+            print(majomoji_label[i],':',str(dictionary[i]).rjust(3),'  ',end='')
+    print()
 
 if __name__ == '__main__':
     main()

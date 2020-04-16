@@ -2,9 +2,12 @@ import argparse
 import copy
 import numpy as np
 import pickle
+import math
 from PIL import Image
+import cupy as cp
 import matplotlib.pyplot as plt
 import crate_dataset as c_d
+import datetime
 
 import chainer
 from chainer.datasets import ConcatenatedDataset
@@ -111,20 +114,19 @@ class Transform(object):
         return img, mb_loc, mb_label
 
 
-def main():
+
+def train(train_dataset,gpu_id=-1,batchsize=8,epoch_max=100,initial_lr=0.0001,lr_decay_rate=0.1,lr_decay_timing=[40,80]):
     # cuDNNのautotuneを有効にする
     chainer.cuda.set_max_workspace_size(512 * 1024 * 1024)
     chainer.config.autotune = True
     chainer.config.cv_resize_backend = "cv2"
 
-    gpu_id = 0
-    batchsize = 8
+    pool=cp.cuda.MemoryPool(cp.cuda.malloc_managed)
+    cp.cuda.set_allocator(pool.malloc)
+
+    # ここあんま重要じゃないハイパパラメータ
     out_num = 'results'
     log_interval = 1, 'epoch'
-    epoch_max = 100
-    initial_lr = 0.0001
-    lr_decay_rate = 0.1
-    lr_decay_timing = [20, 40, 60, 80]
 
     majomoji_label="A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"
 
@@ -137,16 +139,6 @@ def main():
     chainer.cuda.get_device_from_id(gpu_id).use()
     model.to_gpu()
 
-    # データセットの設定
-    # train_dataset = ConcatenatedDataset(
-    #         VOCBboxDataset(year='2007', split='trainval'),
-    #         VOCBboxDataset(year='2012', split='trainval'))
-
-
-    # train_dataset=VOCBboxDataset(year='2007', split='trainval')
-    train_dataset=c_d.crate()
-    # with open('majomoji.pickle', mode='rb') as f:
-    #     train_dataset=pickle.load(f)
     print('data_size = ',len(train_dataset))
     print('load')
 
@@ -155,12 +147,6 @@ def main():
 
     # イテレーターの設定
     train_iter = chainer.iterators.MultiprocessIterator(transformed_train_dataset, batchsize)
-
-    test = VOCBboxDataset(
-        year='2007', split='test',
-        use_difficult=True, return_difficult=True)
-    test_iter = chainer.iterators.SerialIterator(
-        test, batchsize, repeat=False, shuffle=False)
 
     # オプティマイザーの設定
     optimizer = chainer.optimizers.MomentumSGD()
@@ -195,10 +181,75 @@ def main():
     # 学習実行
     print('start')
     trainer.run()
+    del trainer
+
+    # ここで検証とかする
+   
+    return model
+
+
+def main():
+
+    gpu_id = 0
+    batchsize = 8
+    epoch_max = 200
+    initial_lr = 0.0001
+    lr_decay_rate = 0.1
+    lr_decay_timing = 60
+
+    add_name = '512x512 '
+
+    # 学習データをここで作っておく
+    inflate_contrast = False
+    inflate_saturation = False
+    inflate_brightness = False
+
+    way_to_cut = c_d.cut_512
+    dataset=c_d.crate(
+        function=way_to_cut,
+        inf_con=inflate_contrast ,
+        inf_sat=inflate_saturation ,
+        inf_bri=inflate_brightness
+    )
+
+    print('way_to_cut = ',way_to_cut.__name__)
+
+    lr_decay_all_timing=[((x+1)*lr_decay_timing) for x in range(math.floor(epoch_max/lr_decay_timing))]
+
+    model = train(
+        train_dataset=dataset ,
+        gpu_id=gpu_id ,
+        batchsize=batchsize ,
+        epoch_max=epoch_max ,
+        initial_lr=initial_lr ,
+        lr_decay_rate=lr_decay_rate ,
+        lr_decay_timing=lr_decay_all_timing
+    )
 
     # 学習データの保存
     model.to_cpu()
-    serializers.save_npz('33my_ssd_model.npz', model)
+    dt_now = datetime.datetime.now()
+    model_name='{}_{}_{}'.format(dt_now.year,dt_now.month,dt_now.day)
+    serializers.save_npz('model/{}.npz'.format(model_name), model)
+
+    # 今回の学習における条件なども保存したい
+    path_and_name = 'model/'+model_name+'.txt'
+    with open(path_and_name,mode='w') as f:
+        f.write('gpu_id = {}\n'.format(gpu_id))
+        f.write('batchsize = {}\n'.format(batchsize))
+        f.write('epoch_max = {}\n'.format(epoch_max))
+        f.write('initial_lr = {}\n'.format(initial_lr))
+        f.write('lr_decay_rate = {}\n'.format(lr_decay_rate))
+        f.write('lr_decay_timing = {}\n'.format(lr_decay_timing))
+        f.write('inflate_contrast = {}\n'.format(inflate_contrast))
+        f.write('inflate_saturation = {}\n'.format(inflate_saturation))
+        f.write('inflate_brightness = {}\n'.format(inflate_brightness))
+        f.write('add_name = {}\n'.format(add_name))
+
+    print('finish')
+
+
+
 
 
 if __name__ == '__main__':
