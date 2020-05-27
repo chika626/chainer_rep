@@ -39,10 +39,20 @@ majomoji_label="A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","
 
 json_path='majomoji/json/f0abfcf5ff4fb229795dc9c5ec5b39f0-asset.json'
 
-img_path='majomoji/Image/Image004.png'
+img_path='majomoji/Image/Image001.png'
 
-a = 200
-b = 60
-c = [((x+1)*b) for x in range(math.floor(a/b))]
+img=Image.open(img_path).convert('L')
+img.show()
 
-print(c)
+# 2値化
+img=np.asarray(img)
+
+ret2, img_otsu = cv2.threshold(img, 0, 255, cv2.THRESH_OTSU)
+cv2.imshow("otsu", img_otsu)
+cv2.waitKey()
+cv2.destroyAllWindows()
+
+img=Image.fromarray(img_otsu)
+
+
+img.show()

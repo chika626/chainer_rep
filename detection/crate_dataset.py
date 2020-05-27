@@ -228,7 +228,7 @@ def main():
     imgs, bboxes, labels = [], [], []
 
     # 選択
-    take_function=cut_512
+    take_function=one_take_json
     inf_con = False
     inf_sat = False
     inf_bri = False
@@ -242,6 +242,13 @@ def main():
             # 512切り出し画像を1枚とる
             img=imgs_512[i]
 
+            # 2値化
+            img=img.convert('L')
+            img=np.asarray(img)
+            ret2, img = cv2.threshold(img, 0, 255, cv2.THRESH_OTSU)
+            img=Image.fromarray(img)
+            img=img.convert('RGB')
+
             # 実際に合ってるか確認したい
             cambass = ImageDraw.Draw(img)
             for j in range(len(bboxes_512[i])):
@@ -250,8 +257,8 @@ def main():
                 x0 = bboxes_512[i][j][1]
                 y1 = bboxes_512[i][j][2]
                 x1 = bboxes_512[i][j][3]
-                cambass.line( ( (x0,y0) , (x0,y1) , (x1,y1) ,(x1,y0) , (x0 , y0) ) , fill=(255, 255, 0) ,width=10)
-            img.save('test/data_{}.png'.format(counter))
+                # cambass.line( ( (x0,y0) , (x0,y1) , (x1,y1) ,(x1,y0) , (x0 , y0) ) , fill=(255, 255, 0) ,width=10)
+            img.save('crop/data_{}.png'.format(counter))
             counter+=1
             # 画像に含まれる全部の文字を学習数としてカウントする
             for j in labels_512[i]:

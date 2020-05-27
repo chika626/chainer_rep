@@ -197,12 +197,12 @@ def main():
     lr_decay_rate = 0.1
     lr_decay_timing = 60
 
-    add_name = '512x512 '
+    add_name = '512x512 memori x2'
 
     # 学習データをここで作っておく
-    inflate_contrast = False
+    inflate_contrast = True
     inflate_saturation = False
-    inflate_brightness = False
+    inflate_brightness = True
 
     way_to_cut = c_d.cut_512
     dataset=c_d.crate(
