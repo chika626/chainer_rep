@@ -13,6 +13,7 @@ from chainercv.links import SSD300
 from chainercv.utils import read_image
 from chainercv.visualizations import vis_bbox
 
+# model_name = 'model/2020_6_2.npz'
 model_name = 'model/2020_5_27.npz'
 result_path = "majomoji/inference/result"
 
@@ -42,9 +43,9 @@ def take_image(img_path):
     serializers.load_npz(model_name,model)
     bboxes, labels, scores = run(img,model)
 
-    # vis_bbox(img, bboxes, labels, scores,
-    # label_names=majomoji_label)
-    # plt.show()
+    vis_bbox(img, bboxes, labels, scores,
+        label_names=majomoji_label)
+    plt.show()
 
     return bboxes,labels,scores
 
@@ -61,13 +62,14 @@ def start_inference():
     for img_path in all_img_path:
         print('inference ... [' , img_path , ']')
         bboxes,labels,scores = take_image(img_path)
-
         # txtに保持
         img_name = img_path.split('\\')[-1].split('.')[0]
         print(img_name)
         path_and_name = folder_name+'/'+img_name+'.txt'
         with open(path_and_name,mode='w') as f:
             f.write('{}\n'.format(bboxes))
+            f.write('{}\n'.format(labels))
+            f.write('{}\n'.format(scores))
 
 
     return 0

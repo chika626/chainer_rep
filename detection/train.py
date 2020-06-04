@@ -31,6 +31,8 @@ from chainercv.links.model.ssd import random_crop_with_bbox_constraints
 from chainercv.links.model.ssd import random_distort
 from chainercv.links.model.ssd import resize_with_random_interpolation
 
+from m2det import M2Det512
+
 import cv2
 cv2.cv2.setNumThreads(0)
 
@@ -115,7 +117,7 @@ class Transform(object):
 
 
 
-def train(train_dataset,gpu_id=-1,batchsize=8,epoch_max=100,initial_lr=0.0001,lr_decay_rate=0.1,lr_decay_timing=[40,80]):
+def train(net_work,train_dataset,gpu_id=-1,batchsize=8,epoch_max=100,initial_lr=0.0001,lr_decay_rate=0.1,lr_decay_timing=[40,80]):
     # cuDNNのautotuneを有効にする
     chainer.cuda.set_max_workspace_size(512 * 1024 * 1024)
     chainer.config.autotune = True
@@ -131,7 +133,8 @@ def train(train_dataset,gpu_id=-1,batchsize=8,epoch_max=100,initial_lr=0.0001,lr
     majomoji_label="A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"
 
     # モデルの設定
-    model = SSD512(n_fg_class=len(majomoji_label), pretrained_model='imagenet')
+    model = net_work(n_fg_class=len(majomoji_label), pretrained_model='imagenet')
+    # model = M2Det512(n_fg_class=len(majomoji_label), pretrained_model='imagenet')
     model.use_preset('evaluate')
     train_chain = MultiboxTrainChain(model)
 
@@ -189,7 +192,7 @@ def train(train_dataset,gpu_id=-1,batchsize=8,epoch_max=100,initial_lr=0.0001,lr
 
 
 def main():
-
+    
     gpu_id = 0
     batchsize = 8
     epoch_max = 200
@@ -197,7 +200,9 @@ def main():
     lr_decay_rate = 0.1
     lr_decay_timing = 60
 
-    add_name = '512x512 memori x2'
+    net_work = SSD512
+
+    add_name = '512x512 memori x2 TFT'
 
     # 学習データをここで作っておく
     inflate_contrast = True
@@ -217,6 +222,7 @@ def main():
     lr_decay_all_timing=[((x+1)*lr_decay_timing) for x in range(math.floor(epoch_max/lr_decay_timing))]
 
     model = train(
+        net_work=net_work,
         train_dataset=dataset ,
         gpu_id=gpu_id ,
         batchsize=batchsize ,
@@ -236,6 +242,7 @@ def main():
     path_and_name = 'model/'+model_name+'.txt'
     with open(path_and_name,mode='w') as f:
         f.write('gpu_id = {}\n'.format(gpu_id))
+        f.write('used_net_work = {}\n'.format(net_work.__name__))
         f.write('batchsize = {}\n'.format(batchsize))
         f.write('epoch_max = {}\n'.format(epoch_max))
         f.write('initial_lr = {}\n'.format(initial_lr))

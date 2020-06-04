@@ -34,6 +34,9 @@ from chainercv.links.model.ssd import random_crop_with_bbox_constraints
 from chainercv.links.model.ssd import random_distort
 from chainercv.links.model.ssd import resize_with_random_interpolation
 
+
+cut_size = 512
+
 def contrast(imgs,step):
     num=[]
     for i in range(step-1):
@@ -125,6 +128,9 @@ def cut_512(json_path):
     M=len(result['regions'])
     bboxes=[]
     res_center_label=[]
+
+    # 使用済みのものは再度選出しない
+    used_flag = []
     for i in range(M):
         # 4座標とる
         x0=math.floor(result['regions'][i]['points'][0]['x'])
@@ -134,6 +140,7 @@ def cut_512(json_path):
         bbox=[y0,x0,y1,x1]
         c=result['regions'][i]['tags'][0]
         c=ord(c)
+        used_flag.append(False)
         res_center_label.append(c-65)
         bboxes.append(bbox)
 
@@ -141,18 +148,22 @@ def cut_512(json_path):
     # 各bboxの中心から512*512の画像にする
     res_imgs,res_bboxes,res_labels=[],[],[]
     for i in range(M):
+        # いちど選出されたものは見ないようにする
+        if used_flag[i] == True:
+           continue
         bbox=bboxes[i]
         # 中心とる
         center_y=(bbox[2]+bbox[0])/2
         center_x=(bbox[3]+bbox[1])/2
         # ここから256ずつの領域を切り出す
-        d_xy=256
+        d_xy=cut_size/2
         size_xy=[center_x-d_xy,center_y-d_xy,center_x+d_xy,center_y+d_xy]
         img_512=img.crop((size_xy[0],size_xy[1],size_xy[2],size_xy[3]))
         res_imgs.append(img_512)
         # この画像の中に含まれる文字を全部摘出する
         bboxes_512 , labels_512=[],[]
         for j in range(M):
+            # 使用済みは見ないようにする
             if size_xy[0] < bboxes[j][1] and size_xy[1] < bboxes[j][0] and size_xy[2] > bboxes[j][3] and size_xy[3] > bboxes[j][2]:
                 # 内包されるbboxなので追加する
                 d_bbox=[bboxes[j][0]-size_xy[1],bboxes[j][1]-size_xy[0],bboxes[j][2]-size_xy[1],bboxes[j][3]-size_xy[0]]
@@ -160,6 +171,7 @@ def cut_512(json_path):
                 c=result['regions'][j]['tags'][0]
                 c=ord(c)
                 labels_512.append(c-65)
+                used_flag[j] = True
         bboxes_512=np.array(bboxes_512,'f')
         labels_512=np.array(labels_512,'i')
         res_bboxes.append(bboxes_512)
@@ -228,7 +240,7 @@ def main():
     imgs, bboxes, labels = [], [], []
 
     # 選択
-    take_function=one_take_json
+    take_function=cut_512
     inf_con = False
     inf_sat = False
     inf_bri = False
