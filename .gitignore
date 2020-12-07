@@ -1,2 +1,5 @@
 classification/__pycache__/
 detection/model
+onnx-js/
+detection/node_modules
+detection/*.onnx

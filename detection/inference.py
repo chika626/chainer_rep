@@ -12,10 +12,14 @@ from chainercv.links import SSD512
 from chainercv.links import SSD300
 from chainercv.utils import read_image
 from chainercv.visualizations import vis_bbox
+import cv2
+import cv2 as cv
 
 # model_name = 'model/2020_6_2.npz'
-model_name = 'model/2020_5_27.npz'
+# model_name = 'model/2020_7_2.npz'
+model_name = 'model/2020_9_18.npz'
 result_path = "majomoji/inference/result"
+color = [255.0, .0, .0]
 
 # 推論実行するやつ
 def run(img,model):
@@ -74,10 +78,70 @@ def start_inference():
 
     return 0
 
+def dwar_frame(bboxes,labels,img):
+    
+    for box in bboxes:
+        # 1box = 4座標
+        x0 = int(box[0])
+        x1 = int(box[2])
+        y0 = int(box[1])
+        y1 = int(box[3])
+        # 横
+        for x in range(int(x1)-int(x0)):
+            for i in range(3):
+                img[i][x0+x][y0] = color[i]
+                img[i][x0+x][y1] = color[i]
+        # 縦
+        for y in range(y1-y0):
+            for i in range(3):
+                img[i][x0][y0+y] = color[i]
+                img[i][x1][y0+y] = color[i]
+    
+    # opencvで扱えるように変換
+    img = trans_img_cv2(img)
+    majomoji_label=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
+    for i in range(len(labels)):
+        # 文字書き込み
+        cv.putText(img, majomoji_label[labels[i]], 
+        (bboxes[i][1], bboxes[i][2]), 
+        cv.FONT_HERSHEY_PLAIN, 5, color, 5, cv.LINE_AA)
+
+    return img
+
+def trans_img_cv2(img):
+    buf = np.asanyarray(img, dtype=np.uint8).transpose(1, 2, 0)
+    dst = cv2.cvtColor(buf, cv2.COLOR_RGB2BGR)
+    return dst
+
+def discord_inf(png):
+    img = read_image(png)
+
+    # 学習済みmodelを渡す
+    majomoji_label="A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"
+    model = SSD512(n_fg_class=len(majomoji_label))
+
+    # model のロード
+    serializers.load_npz(model_name,model)
+
+    # 推論の実行
+    bboxes, labels, scores = run(img,model)
+
+    print("推論終了")
+
+    # 加工も行って画像を返す
+    # [(RGB),(y),(x)]
+    # 線入れ関数
+    
+    d_img = dwar_frame(bboxes,labels,img)
+
+    cv2.imwrite("fin_inf.jpg",d_img)
+
 
 def main():
 
-    start_inference()
+    discord_inf("test016.PNG")
+
+    # start_inference()
 
     # 推論させたい画像の選択
     # img = read_image('majomoji/Image/test016.PNG')

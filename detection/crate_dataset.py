@@ -188,6 +188,7 @@ def crate(function,inf_con=False,inf_sat=False,inf_bri=False):
     # 全jsonについてやってく
     for s in json_path:
         # 512ごとに切り出す
+        print(s)
         imgs_512,bboxes_512,labels_512=function(s)
         for i in range(len(imgs_512)):
             # 512切り出し画像を1枚とる
@@ -254,12 +255,12 @@ def main():
             # 512切り出し画像を1枚とる
             img=imgs_512[i]
 
-            # 2値化
-            img=img.convert('L')
-            img=np.asarray(img)
-            ret2, img = cv2.threshold(img, 0, 255, cv2.THRESH_OTSU)
-            img=Image.fromarray(img)
-            img=img.convert('RGB')
+            # # 2値化
+            # img=img.convert('L')
+            # img=np.asarray(img)
+            # ret2, img = cv2.threshold(img, 0, 255, cv2.THRESH_OTSU)
+            # img=Image.fromarray(img)
+            # img=img.convert('RGB')
 
             # 実際に合ってるか確認したい
             cambass = ImageDraw.Draw(img)

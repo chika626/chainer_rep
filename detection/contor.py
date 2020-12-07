@@ -34,6 +34,7 @@ from chainercv.utils import read_image
 from chainercv.links.model.ssd import random_crop_with_bbox_constraints
 from chainercv.links.model.ssd import random_distort
 from chainercv.links.model.ssd import resize_with_random_interpolation
+import queue
 
 def run(img):
     # c , H , W = img.shape
@@ -66,16 +67,16 @@ def run(img):
     
 
 def main():
-    # 単一の場合のコード
-    img = Image.open('cont/transed/X.jpg')
-    img=img.convert('L')
-    img=np.asarray(img)
-    ret2, img = cv2.threshold(img, 0, 255, cv2.THRESH_OTSU)
-    img=Image.fromarray(img)
-    img=img.convert('RGB')
-    transed = run(img)
-    transed.save('transec_0.png')
-    return
+    # # 単一の場合のコード
+    # img = Image.open('cont/transed/X.jpg')
+    # img=img.convert('L')
+    # img=np.asarray(img)
+    # ret2, img = cv2.threshold(img, 0, 255, cv2.THRESH_OTSU)
+    # img=Image.fromarray(img)
+    # img=img.convert('RGB')
+    # transed = run(img)
+    # transed.save('transec_0.png')
+    # return
 
     # 大量変換機
     img_path=glob.glob("cont/crop/*")
@@ -85,6 +86,7 @@ def main():
         transed = run(img)
         transed.save('transec_{}.png'.format(counter))
         counter+=1
+
 
 
 if __name__ == '__main__':

@@ -7,6 +7,7 @@ from PIL import Image
 import cupy as cp
 import matplotlib.pyplot as plt
 import crate_dataset as c_d
+import auto_crate as auto
 import datetime
 
 import chainer
@@ -31,7 +32,7 @@ from chainercv.links.model.ssd import random_crop_with_bbox_constraints
 from chainercv.links.model.ssd import random_distort
 from chainercv.links.model.ssd import resize_with_random_interpolation
 
-from m2det import M2Det512
+from m2det import M2Det300
 
 import cv2
 cv2.cv2.setNumThreads(0)
@@ -201,13 +202,14 @@ def main():
     lr_decay_timing = 60
 
     net_work = SSD512
+    # net_work = M2Det300
 
-    add_name = '512x512 memori x2 TFT'
+    add_name = '512 x 512 FFF'
 
     # 学習データをここで作っておく
-    inflate_contrast = True
+    inflate_contrast = False
     inflate_saturation = False
-    inflate_brightness = True
+    inflate_brightness = False
 
     way_to_cut = c_d.cut_512
     dataset=c_d.crate(
@@ -217,7 +219,10 @@ def main():
         inf_bri=inflate_brightness
     )
 
-    print('way_to_cut = ',way_to_cut.__name__)
+    # dataset=auto.crate(100)
+    
+
+    print('way_to_cut = auto')
 
     lr_decay_all_timing=[((x+1)*lr_decay_timing) for x in range(math.floor(epoch_max/lr_decay_timing))]
 
