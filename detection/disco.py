@@ -12,6 +12,7 @@ TOKEN = 'Nzg1NTIyMDQ1Mzg3NTM4NDgz.X85EaQ.jX3Pwc_kHLApM-U-7Pgtg6vbJO4'
 
 # 接続に必要なオブジェクトを生成
 client = discord.Client()
+func = inference.discord_inf
 
 # 起動時に動作する処理
 @client.event
@@ -19,7 +20,7 @@ async def on_ready():
     # 起動したらターミナルにログイン通知が表示される
     print('ログインしました')
     channel = client.get_channel(785523541281079328)
-    await channel.send('hello')
+    await channel.send('hello :)')
 
 # メッセージ受信時に動作する処理
 @client.event
@@ -30,17 +31,23 @@ async def on_message(message):
 
     # channnelを指定
     channel = client.get_channel(785523541281079328)
-
+    global func
     # 「/neko」と発言したら「にゃーん」が返る処理
     if message.content == '/neko':
-        await message.channel.send('にゃーん')
+        await message.channel.send('nya')
+    elif message.content == '/highclass':
+        await channel.send("high class inference mode!!!!!!!")
+        func = inference.futures_inf
+    elif message.content == '/nomal':
+        await channel.send("nomal inference mode!")
+        func = inference.discord_inf
     elif not message.attachments:
         await channel.send("no attachments")
     else:
         # 中身の確認
         # await channel.send(message.attachments[0].filename)
 
-        await channel.send("ok. start inference.")
+        await channel.send("ok running...")
 
         # 403回避
         url = message.attachments[0].url
@@ -50,9 +57,9 @@ async def on_message(message):
         request = urllib.request.Request(url=url, headers=headers)
         savename = "test.png"
         file = io.BytesIO(urllib.request.urlopen(request).read())
-        inference.discord_inf(file)
+        func(file)
         filepath = 'fin_inf.jpg'
-        await channel.send('推論結果',file=discord.File(filepath))
+        await channel.send('finished!',file=discord.File(filepath))
 
     
 

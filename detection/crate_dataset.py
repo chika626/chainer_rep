@@ -89,7 +89,7 @@ def one_take_json(json_path):
         x0=math.floor(result['regions'][i]['points'][0]['x'])
         y0=math.floor(result['regions'][i]['points'][0]['y'])
         x1=math.ceil(result['regions'][i]['points'][2]['x'])
-        y1=math.ceil(result['regions'][i]['points'][2]['y'])
+        y1=math.ceil(result['regions'][i]['points'][2]['y'])e
         # 中心とって正方形で対応
         dy=y1-y0
         dx=x1-x0
